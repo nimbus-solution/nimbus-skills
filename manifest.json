@@ -7,7 +7,8 @@
       "description": "Use when the user wants to raise Apex test coverage on a class, a feature area, or the whole project — typical phrasings are \"increase coverage\", \"get to 75%\", \"cover the uncovered branches in X\", or pasting Nimbus's coverage report. Reads the per-line coverage Nimbus already collects, picks the highest-leverage gap, and writes targeted tests rather than synthetic call-only tests.",
       "agents": {
         "claude-code": "dist/claude-code/apex-coverage-uplift/SKILL.md",
-        "cursor": "dist/cursor/apex-coverage-uplift.mdc"
+        "cursor": "dist/cursor/apex-coverage-uplift.mdc",
+        "kiro": "dist/kiro/apex-coverage-uplift.md"
       }
     },
     {
@@ -15,7 +16,8 @@
       "description": "Use when an SFDX project does not yet have Nimbus configured, or when the user asks to \"set up Nimbus\", \"install Nimbus on this project\", or \"wire Nimbus into CI\". Walks through detection, init, schema sync, stub gaps, the first green run, and a CI snippet — in that order. Stops to ask the user only at decision points (org alias, CI provider).",
       "agents": {
         "claude-code": "dist/claude-code/bootstrap-nimbus/SKILL.md",
-        "cursor": "dist/cursor/bootstrap-nimbus.mdc"
+        "cursor": "dist/cursor/bootstrap-nimbus.mdc",
+        "kiro": "dist/kiro/bootstrap-nimbus.md"
       }
     },
     {
@@ -23,7 +25,8 @@
       "description": "Use when an Apex test is failing and the user wants it fixed. Triggers on phrases like \"fix this test\", \"tests are red\", \"test failure\", or when the user pastes Nimbus or sf CLI test output showing assertion errors or exceptions. Drives the inner loop with Nimbus's MCP tools so the agent gets sub-second feedback per iteration instead of waiting for an org.",
       "agents": {
         "claude-code": "dist/claude-code/fix-failing-apex-test/SKILL.md",
-        "cursor": "dist/cursor/fix-failing-apex-test.mdc"
+        "cursor": "dist/cursor/fix-failing-apex-test.mdc",
+        "kiro": "dist/kiro/fix-failing-apex-test.md"
       }
     }
   ],

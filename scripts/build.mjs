@@ -90,6 +90,22 @@ ${sections.join('\n\n---\n\n')}
   writeFileSync(join(dir, 'CONVENTIONS.md'), out);
 }
 
+function writeKiro(skills) {
+  const dir = join(DIST_DIR, 'kiro');
+  mkdirSync(dir, { recursive: true });
+  for (const s of skills) {
+    // inclusion: manual — user references the skill via #<name> in their Kiro
+    // prompt rather than auto-loading every session. Matches the on-demand
+    // semantics of Claude Code's description-driven loading.
+    const out = `---
+inclusion: manual
+---
+
+${s.body}`;
+    writeFileSync(join(dir, `${s.name}.md`), out);
+  }
+}
+
 function writeAgentsMd(skills) {
   const sections = skills.map(s =>
     `## ${s.frontmatter.name}\n\n_${s.frontmatter.description}_\n\n${demoteHeadings(s.body)}`
@@ -117,6 +133,7 @@ function writeManifest(skills) {
       agents: {
         'claude-code': `dist/claude-code/${s.name}/SKILL.md`,
         cursor: `dist/cursor/${s.name}.mdc`,
+        kiro: `dist/kiro/${s.name}.md`,
       },
     })),
     bundles: {
@@ -137,6 +154,7 @@ function main() {
   }
   writeClaudeCode(skills);
   writeCursor(skills);
+  writeKiro(skills);
   writeAider(skills);
   writeAgentsMd(skills);
   writeManifest(skills);
