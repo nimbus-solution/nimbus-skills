@@ -1,0 +1,54 @@
+---
+inclusion: manual
+---
+
+# Test-driven Apex
+
+You are building an Apex feature test-first in a Salesforce project that uses Nimbus for local execution. Nimbus runs Apex, SOQL, DML, and triggers against an embedded Postgres with no org, so the inner loop is fast enough to write one assertion at a time.
+
+## Preconditions
+
+1. The project has `sfdx-project.json` and Nimbus is installed (`nimbus --version`).
+2. Nimbus's MCP server is registered (`claude mcp add nimbus -- nimbus mcp`). If MCP is unavailable, fall back to `nimbus test <pattern> --json` and parse the output.
+3. You have a one-sentence statement of the behaviour to build. If the requirement is vague, ask the user for a concrete example (input → expected output) before writing any code.
+
+## Loop
+
+Work in the smallest possible increments. One behaviour per cycle.
+
+1. **Red — write one failing test.** Add a single `@isTest` method (or one new assertion to an existing method) describing the next slice of behaviour. Name it for the behaviour, not the method (`convertsLeadWithMatchingAccount`, not `testConvert1`).
+2. **Run it and confirm it fails for the right reason.** Call `run_apex_tests` with the narrow pattern (`ClassName.methodName`), `max_failures: 5`. A test that fails to *compile* or fails with `MethodException`/`NullPointerException` instead of an `AssertException` is not a valid red — fix the test until it fails on the assertion you intend.
+3. **Green — write the minimum production code to pass.** No speculative generality. Implement only what this test demands.
+4. **Re-run the same narrow pattern.** If green, continue. If red, return to step 3 with one new hypothesis — do not retry the same edit.
+5. **Refactor — with the test green.** Clean up names, extract methods, remove duplication. Re-run after each refactor; the test must stay green. Refactor production *and* test code, but never change behaviour while a test is red.
+6. **Widen and repeat.** Run `ClassName.*` to confirm no sibling regressed, then return to step 1 for the next behaviour.
+
+## Hard rules
+
+- **One behaviour per cycle.** Resist writing five tests then implementing. The discipline is the value.
+- **Every red must fail on an assertion**, not a compile error or an unintended NPE. A test that was never red for the right reason proves nothing.
+- **Never write production code with no failing test demanding it.** If you can't write a test for it, you don't need it yet.
+- **Assert outcomes, not calls.** `System.assertEquals(expected, actual)` on real state — not `System.assert(true)` after invoking a method. Hollow assertions pass mutation testing's survivors straight through (see the `harden-tests-with-mutation` skill).
+- **Use real DML/SOQL, not mocks, for the happy path.** Nimbus runs them for real — exploit that. Reserve stubs for genuine external boundaries (callouts).
+
+## Designing the test list
+
+Before the first cycle, jot a short list (in a comment or scratch note) of the behaviours to cover, ordered simplest-first:
+- The trivial case (one record, happy path).
+- Boundary/empty cases (zero rows, null inputs, empty collections).
+- The bulk case (200 records — Apex's defining constraint; if this is trigger or DML code, a bulk test is mandatory, see `bulkify-apex`).
+- Error cases (expected exceptions via `try/catch` + `System.assert` on the message).
+
+Work down the list one cycle at a time. Add to it as new cases occur to you mid-build.
+
+## When to stop and ask the user
+
+- The behaviour depends on org metadata you can't infer (Custom Setting/Metadata records, Labels). Ask for the values.
+- A test forces a product decision (what *should* happen on conflicting input?). Present the options, let the user choose, then encode the choice as the test.
+- The requirement turns out larger than stated — surface the scope, don't silently build half of it.
+
+## Verification before declaring done
+
+1. Run the full class (`ClassName.*`) and confirm all green.
+2. Run with coverage (`nimbus test ClassName.* --coverage`, or `get_coverage` after a run) and confirm the new code is actually exercised — TDD should yield high coverage by construction; a gap means a missing test.
+3. Re-read the test list. Did you cover the bulk and error cases, or only the happy path? Name any deliberately-skipped case in your summary.

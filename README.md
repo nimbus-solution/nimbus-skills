@@ -2,13 +2,24 @@
 
 Curated agent skills for working on Apex with **[Nimbus](https://testnimbus.dev)** — the local Apex test runner.
 
-Skills are short, opinionated playbooks that tell an AI coding agent **when** and **how** to use Nimbus's MCP tools effectively. Three to start:
+Skills are short, opinionated playbooks that tell an AI coding agent **when** and **how** to use Nimbus's local runtime effectively. Each is a tight loop around a signal only Nimbus produces offline — real test results, per-line coverage, governor usage, execution traces, mutation scores.
 
-- **`fix-failing-apex-test`** — the inner loop. Read failure → narrow → edit → re-run, until green.
+**Getting set up**
 - **`bootstrap-nimbus`** — set Nimbus up on a fresh SFDX project, including CI.
-- **`apex-coverage-uplift`** — raise coverage by writing targeted tests, not theatre.
+- **`migrate-suite-to-nimbus`** — get an existing org suite running green locally by clearing blockers in dependency order (schema → stubs → setup → fixtures).
 
-All three assume the project has Nimbus installed and the MCP server registered with the agent (`claude mcp add nimbus -- nimbus mcp`).
+**Writing & fixing code**
+- **`apex-tdd`** — red → green → refactor; the only way to actually do TDD in Apex without an org.
+- **`fix-failing-apex-test`** — the inner loop. Read failure → narrow → edit → re-run, until green.
+- **`triage-apex-failures`** — cluster a wall of failures by root cause before fixing.
+
+**Raising quality**
+- **`apex-coverage-uplift`** — raise coverage by writing targeted tests, not theatre.
+- **`harden-tests-with-mutation`** — kill surviving mutants so assertions actually check behaviour.
+- **`bulkify-apex`** — find and prove fixes for governor-limit / bulk-DML problems with measured usage.
+- **`apex-pre-deploy-check`** — diff-scoped run + coverage delta + governor + risky-pattern gate before you ship.
+
+All skills assume the project has Nimbus installed and (for the MCP-driven loops) the MCP server registered with the agent (`claude mcp add nimbus -- nimbus mcp`).
 
 ## Install
 
@@ -75,9 +86,7 @@ OpenCode reads `AGENTS.md` verbatim — no further config needed.
 
 ```
 skills/                  # Source of truth — edit these
-  fix-failing-apex-test/SKILL.md
-  bootstrap-nimbus/SKILL.md
-  apex-coverage-uplift/SKILL.md
+  <name>/SKILL.md        # one dir per skill (9 today)
 dist/                    # Generated; do not edit
   claude-code/<name>/SKILL.md
   cursor/<name>.mdc

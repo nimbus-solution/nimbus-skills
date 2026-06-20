@@ -12,6 +12,24 @@
       }
     },
     {
+      "name": "apex-pre-deploy-check",
+      "description": "Use before shipping an Apex change — \"is this safe to deploy\", \"pre-deploy check\", \"review this PR/diff\", \"check before I push\", or as an agent-driven CI gate. Runs the tests affected by the diff on Nimbus locally and reports coverage delta, governor usage, and (on request) mutation score, flagging risky patterns — a fast local gate before the slow org deploy.",
+      "agents": {
+        "claude-code": "dist/claude-code/apex-pre-deploy-check/SKILL.md",
+        "cursor": "dist/cursor/apex-pre-deploy-check.mdc",
+        "kiro": "dist/kiro/apex-pre-deploy-check.md"
+      }
+    },
+    {
+      "name": "apex-tdd",
+      "description": "Use when the user wants to build an Apex feature test-first, or asks to \"do TDD\", \"write the test first\", \"red-green-refactor\", or \"implement X with tests\". Drives a real red→green→refactor loop against Nimbus's local runtime so each cycle is sub-second instead of a multi-minute org deploy. This is the only way an agent can actually do TDD in Apex without an org.",
+      "agents": {
+        "claude-code": "dist/claude-code/apex-tdd/SKILL.md",
+        "cursor": "dist/cursor/apex-tdd.mdc",
+        "kiro": "dist/kiro/apex-tdd.md"
+      }
+    },
+    {
       "name": "bootstrap-nimbus",
       "description": "Use when an SFDX project does not yet have Nimbus configured, or when the user asks to \"set up Nimbus\", \"install Nimbus on this project\", or \"wire Nimbus into CI\". Walks through detection, init, schema sync, stub gaps, the first green run, and a CI snippet — in that order. Stops to ask the user only at decision points (org alias, CI provider).",
       "agents": {
@@ -21,12 +39,48 @@
       }
     },
     {
+      "name": "bulkify-apex",
+      "description": "Use when Apex needs to be made safe against governor limits or bulk DML — \"bulkify this\", \"queries in a loop\", \"hitting SOQL/DML limits\", \"will this survive 200 records\", or a LimitException in a run. Uses Nimbus's local governor tracking and real 200-record execution to find limit problems and prove the fix, instead of eyeballing the code.",
+      "agents": {
+        "claude-code": "dist/claude-code/bulkify-apex/SKILL.md",
+        "cursor": "dist/cursor/bulkify-apex.mdc",
+        "kiro": "dist/kiro/bulkify-apex.md"
+      }
+    },
+    {
       "name": "fix-failing-apex-test",
       "description": "Use when an Apex test is failing and the user wants it fixed. Triggers on phrases like \"fix this test\", \"tests are red\", \"test failure\", or when the user pastes Nimbus or sf CLI test output showing assertion errors or exceptions. Drives the inner loop with Nimbus's MCP tools so the agent gets sub-second feedback per iteration instead of waiting for an org.",
       "agents": {
         "claude-code": "dist/claude-code/fix-failing-apex-test/SKILL.md",
         "cursor": "dist/cursor/fix-failing-apex-test.mdc",
         "kiro": "dist/kiro/fix-failing-apex-test.md"
+      }
+    },
+    {
+      "name": "harden-tests-with-mutation",
+      "description": "Use when the user wants to know whether tests actually test anything, or to strengthen weak assertions — \"are these tests any good\", \"run mutation testing\", \"kill the surviving mutants\", \"coverage is high but I don't trust it\". Uses Nimbus's mutation testing (Pro) to find code that's executed-but-not-asserted, then strengthens the tests so the mutants die. Coverage says a line ran; mutation says it was checked.",
+      "agents": {
+        "claude-code": "dist/claude-code/harden-tests-with-mutation/SKILL.md",
+        "cursor": "dist/cursor/harden-tests-with-mutation.mdc",
+        "kiro": "dist/kiro/harden-tests-with-mutation.md"
+      }
+    },
+    {
+      "name": "migrate-suite-to-nimbus",
+      "description": "Use when a team wants an existing Apex test suite running locally on Nimbus — phrasings like \"get our tests running on Nimbus\", \"migrate the suite\", \"why do so many tests fail on Nimbus\", or pasting a run where hundreds of tests fail right after first setup. Systematically clears the real blockers (missing schema, stubs, Test.loadData, unsupported calls) and drives toward a green local run, instead of fixing failures one by one.",
+      "agents": {
+        "claude-code": "dist/claude-code/migrate-suite-to-nimbus/SKILL.md",
+        "cursor": "dist/cursor/migrate-suite-to-nimbus.mdc",
+        "kiro": "dist/kiro/migrate-suite-to-nimbus.md"
+      }
+    },
+    {
+      "name": "triage-apex-failures",
+      "description": "Use when a test run comes back with many failures and the user wants to understand them before fixing — \"triage these failures\", \"what's going on with the suite\", \"group these errors\", or pasting a long red run. Clusters failures by root cause using Nimbus's stack traces and execution traces, explains each cluster, and proposes a fix order — rather than diving into the first failure.",
+      "agents": {
+        "claude-code": "dist/claude-code/triage-apex-failures/SKILL.md",
+        "cursor": "dist/cursor/triage-apex-failures.mdc",
+        "kiro": "dist/kiro/triage-apex-failures.md"
       }
     }
   ],
