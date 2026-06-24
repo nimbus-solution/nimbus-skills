@@ -75,6 +75,15 @@
       }
     },
     {
+      "name": "report-bug-for-ai",
+      "description": "Use when the user wants to report a bug, file a GitHub issue, or describe unexpected behaviour — \"I found a bug\", \"help me report this\", \"file an issue\", \"this doesn't work right\". Walks the user through providing the structured information an AI agent needs to triage, reproduce, and fix the bug from the report alone, without necessarily having access to the source code.",
+      "agents": {
+        "claude-code": "dist/claude-code/report-bug-for-ai/SKILL.md",
+        "cursor": "dist/cursor/report-bug-for-ai.mdc",
+        "kiro": "dist/kiro/report-bug-for-ai.md"
+      }
+    },
+    {
       "name": "triage-apex-failures",
       "description": "Use when a test run comes back with many failures and the user wants to understand them before fixing — \"triage these failures\", \"what's going on with the suite\", \"group these errors\", or pasting a long red run. Clusters failures by root cause using Nimbus's stack traces and execution traces, explains each cluster, and proposes a fix order — rather than diving into the first failure.",
       "agents": {

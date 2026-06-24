@@ -1,0 +1,173 @@
+---
+description: Use when the user wants to report a bug, file a GitHub issue, or describe unexpected behaviour — "I found a bug", "help me report this", "file an issue", "this doesn't work right". Walks the user through providing the structured information an AI agent needs to triage, reproduce, and fix the bug from the report alone, without necessarily having access to the source code.
+globs:
+alwaysApply: false
+---
+
+# Report a bug for AI-assisted triage
+
+You are helping a user file a bug report. The report will be read by both humans and AI agents who need to reproduce, diagnose, and fix the issue from the report alone — they may not have interactive access to the user's environment. Every missing detail multiplies the time to triage.
+
+Ask the user questions to fill out each section below. Don't dump the whole template at once — lead a conversation that produces the fields one at a time, then assemble the final report.
+
+## Preconditions
+
+1. **Check for duplicates first.** Ask the user to quickly scan open issues at **https://github.com/nimbus-solution/nimbus/issues** for anything that sounds like the same bug. If a matching issue exists, post a comment there instead of opening a new one (include any missing details from this process).
+2. **Confirm the version.** Ask the user to run `nimbus --version` and read back the exact output. Don't accept "latest" or "v1.1.x" — get the precise semver.
+3. **If it's a test failure:** ask them to run the test with `--json` (e.g. `nimbus test "ClassName" --json`) and paste the result so the AI has structured failure data.
+4. **If it's a crash:** ask them for the full error output (don't let them paraphrase — paste the actual output).
+5. Let the user know the issue will be filed at **https://github.com/nimbus-solution/nimbus/issues/new**.
+
+## The sections any report needs
+
+### 1. Title — one line that routes the issue
+
+A good title follows this pattern:
+
+```
+[Area]: [specific symptom] — [scope/regression indicator]
+```
+
+Examples of good titles (drawn from real reports):
+- `SIGSEGV: record-triggered Flow doing DML inside a trigger-initiated DML nil-derefs in db layer`
+- `v1.1.6 regression: standard objects no longer provisioned — relation does not exist`
+- `--fetch-missing is ~20x slower (one sf describe per object, not batched)`
+
+Examples of poor titles (too vague for routing or dedup):
+- `Something broke`
+- `Test fails`
+- `Error when running nimbus`
+
+**Ask the user** for a one-line summary. If it's vague, probe: "What area? Is it a crash, wrong output, a hang? Is it a new regression or has it never worked?"
+
+### 2. Environment — the reproduction context
+
+This matters because the same symptom can have different causes across versions and configurations. Collect all of:
+
+| Field | How to get it |
+|---|---|
+| Project version | `nimbus --version` |
+| OS / arch | `uname -sm` |
+| DB provider | Embedded (free) or Pro/daemon |
+| License tier | Free / Pro / Team |
+| Project size | Approx. number of Apex classes or test classes |
+
+**Ask the user** for each. If the version is missing, the AI can't bisect. If the provider is missing, the AI can't determine whether a daemon or embedded Postgres path is involved.
+
+### 3. Summary — exactly what happens
+
+One paragraph that states:
+- What the user did (the triggering action)
+- What they expected to happen
+- What actually happened
+
+If there's an error message, include it verbatim in a code block. Do not paraphrase error messages — AI triage parses the exact text to match against known failure signatures.
+
+**Ask the user:** "What did you do, what did you expect, and what happened instead?" If they only describe one side, prompt for the other.
+
+### 4. Reproduction — the minimal sequence
+
+The single most valuable thing a reporter can provide is a minimal, self-contained reproduction. Guide them to narrow it down:
+
+- **For a test failure:** a single test class (not the whole suite) that demonstrates the bug. Ask them to extract the smallest possible snippet.
+- **For a crash or hang:** the exact command and all flags. If the command touches a specific project file, which one?
+- **For wrong behaviour:** the Apex code, the input data, and the output. Provide code blocks with the language tag (`apex` for Apex, `bash` for shell commands).
+
+Probe for what makes the bug appear and what makes it disappear:
+
+> "Does the bug reproduce with a freshly synced database (`--rebuild` / deleting `.nimbus/db/`) or only on an existing one?"
+> "Does the bug reproduce without parallelism (e.g. `-p 1`)?"
+
+These narrowing questions tell the AI whether the bug is in schema provisioning, database state migration, or the parallel execution path — without the AI having source access.
+
+**Ask the user:** "Can you provide a minimal reproduction? Ideally a single test class and the exact command to run it." If the reproduction is large, ask them to try removing parts until the bug stops happening, then report what they removed.
+
+### 5. Expected vs Actual output
+
+A side-by-side comparison. If the output is JSON (e.g. from `--json`), paste the full JSON in a code block. If it's text output, both the expected and actual.
+
+When relevant, ask:
+
+> "What does `nimbus --version` report? Was this working in a previous version? If so, which version worked and which version broke it?"
+
+Knowing it's a regression (worked in v1.1.5, broke in v1.1.6) is the single most useful diagnostic signal the AI can get.
+
+### 6. Diagnostic artifacts
+
+These are valuable in rough order:
+
+1. **Full stack trace** — for crashes/panics, the complete trace, not just the top frame.
+2. **Full error output** — captured to a file and pasted in a code block, not a screenshot.
+3. **Relevant config files** — if the issue might be configuration-dependent, the relevant sections of `nimbus.config` or `sfdx-project.json` (redact any secrets).
+4. **Logs** — `.nimbus/daemon.log` for Pro users, or Postgres logs for embedded.
+5. **Schema files** — if the issue is about object/field resolution, the relevant `.nimbus/schemas/*.json` file.
+
+Each artifact should be in a code block with the appropriate language tag (`json`, `log`, `text`).
+
+**Ask the user:** "Can you paste the full error output? A screenshot is harder to parse — text in a code block is best."
+
+### 7. Scoping / what was already tried
+
+This prevents the AI from going down paths the user already ruled out. Capture:
+
+- What the user already tried to debug or work around
+- What changes they made before the bug appeared
+- Whether the bug reproduces on a clean environment (fresh clone, fresh sync)
+- Whether it reproduces all the time or intermittently
+- What does **not** cause the bug (negative scoping is very valuable)
+
+> "I tried A, B, C but none of them helped. What's also interesting: removing X from the test makes the bug disappear, but removing Y doesn't change anything."
+
+This negative scoping tells the AI which component is likely involved.
+
+**Ask the user:** "What have you already tried? What didn't change the outcome? What makes the bug appear vs disappear?"
+
+### 8. Impact — how much it matters
+
+This helps the maintainer/AI prioritise:
+
+Test impact: "How many tests fail because of this bug? Was it passing before?"
+Business impact: "Is this blocking a deployment, a release, daily work?"
+Urgency: "Is this a P0 (blocking) or a long-standing nuisance?"
+
+**Ask the user:** "How many tests are affected? Is this blocking you?"
+
+## Assembling the final report
+
+Once you have all eight sections, assemble them into a clean GitHub issue body with this structure:
+
+**Summary** — one paragraph covering what happened, what was expected, and what actually happened.
+
+**Environment** — a markdown table with version, OS, DB provider, license tier.
+
+**Reproduction** — an Apex code block with the minimal test class, plus a bash code block with the exact command.
+
+**Expected vs Actual** — two short paragraphs or a comparison table.
+
+**Diagnostic artifacts** — the full error output or stack trace in a code block. Text only, no screenshots.
+
+**Scoping** — a bullet list of what was tried, what was ruled out, and whether it's a regression.
+
+**Impact** — number of affected tests and severity (blocking / major / minor).
+
+Add a **Labels** comment asking the person filing to add applicable labels:
+```
+<!-- Labels to apply: bug, regression, needs-info (if incomplete) -->
+```
+
+Present the assembled report to the user for review before they submit. Ask them to paste it into the GitHub issue form at **https://github.com/nimbus-solution/nimbus/issues/new**. If the user doesn't have a GitHub account, offer to help them create one or tell them they can paste the report into an email to the maintainers.
+
+## Hard rules
+
+- **Never ask the user to share source code or data they're not comfortable sharing.** Ask for Apex snippets, not full proprietary classes. If they mention a stack trace references an internal file, they can redact the file path but keep the line numbers and error message.
+- **Never ask for credentials, tokens, org access, or database dumps.**
+- **Do not guess versions or error messages.** If the user doesn't know, mark it `[unknown — reporter to fill]` in the template — the AI can work with partial data but not with fabricated data.
+- **Prefer text over screenshots.** Error messages in code blocks are searchable and parsable. Screenshots are neither.
+- **One issue per bug.** If the user describes multiple symptoms, ask if they're related or separate. If separate, file them as separate issues.
+
+## When to stop and ask the user
+
+- The user doesn't want to go through the full process — offer to produce a shorter report with a `needs-info` marker.
+- The user shares a screenshot of an error — ask for the text instead.
+- The user's description is clearly two different bugs — pause and ask which one to report first.
+- The reproduction involves proprietary code the user can't share — help them produce a synthetic reproduction with standard objects that still demonstrates the same class of bug.
